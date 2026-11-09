@@ -1,37 +1,65 @@
 # FlowForge AI
 
-FlowForge AI is an Agent-Native recovery studio for synthetic Order-to-Payment failures. It helps an operator investigate a failed workflow, review a structured patch, simulate its effects and approve the exact revision before applying it to the simulated case. It never contacts a real payment gateway, inventory service or webhook provider.
+### Investigate a failed workflow. Rehearse the fix. Let a human decide.
 
-## Why agent-native
+FlowForge AI is an Agent-Native recovery studio for synthetic order-to-payment failures. An operator can inspect a failure with an agent, review a structured recovery patch, compare deterministic simulations, and approve the exact verified revision before applying it to the simulated case.
 
-The agent works through the same typed recovery actions that power the Studio: it can inspect case evidence and propose a structured change in the context of the selected case. The shared AgentSidebar keeps the investigation in the operator's workflow. Case state, simulation results and audit events persist in SQL. A human reviews and approves a passing revision in Studio; the agent cannot approve it. Application checks that exact approval and zero duplicate synthetic captures.
+**[Judge guide](docs/JUDGE_GUIDE.md)** · **[Architecture](docs/ARCHITECTURE.md)** · **[Evidence](docs/EVIDENCE.md)** · **[Security](docs/SECURITY.md)** · **[Source on GitHub](https://github.com/zzzyyyddd/flowforge-ai)**
 
-## Demonstrated recovery
+> **Demo status:** The [Vercel deployment](https://flowforge-ai-seven.vercel.app) returned HTTP 500 on 9 November 2026. It is not currently a working judge demo. Use the local walkthrough below; see [deployment preparation](JUDGE-DEPLOYMENT.md) for the blockers. No real payments, inventory changes, or webhooks are executed.
 
-For payment-timeout case `9cf20a1d-e774-450b-805e-6461fa89612c`, an authenticated case read confirmed an agent-attributed revision 2, a passing recovery simulation with one synthetic capture and zero duplicate captures, human approval, and application of that revision. The saved patch uses two retries, a 5,000 ms timeout and idempotency. The user reports the proposal was generated with Groq; the individual `inspect-recovery` and `propose-recovery` execution records were not independently accessible and remain **unverified**. See [AGENT-VERIFICATION.md](AGENT-VERIFICATION.md).
+## Judge quick start
 
-The original failure and the recovered outcome appear as separate traces. The simulator also models inventory shortage and duplicate webhook delivery. Its traces and results are synthetic; they are not proof about real-world systems.
+1. Review the [judge guide](docs/JUDGE_GUIDE.md) for a short walkthrough and evidence boundaries.
+2. Run locally with Node.js 22.22+ and pnpm: `pnpm install`, then `pnpm exec agent-native dev`. Sign in at the printed URL and open `/studio`.
+3. Create a **Payment timeout** case and run the baseline. With a configured Groq provider, use **Investigate failure** to request an agent investigation. Review the proposed patch and run verification.
+4. Review the before/after traces and capture counts. A human can approve a passing revision in Studio, then apply it to the simulated case. Changing the patch invalidates verification and approval.
 
-## Run locally
+A working provider credential and network access are required for a new agent investigation. Screenshots of the actual product are not currently included in this repository. See [DEMO.md](DEMO.md) for a narrated walkthrough and [evidence status](docs/EVIDENCE.md) before presenting a historical run.
 
-Requires Node.js 22.22 or newer and the dependencies in `pnpm-lock.yaml`.
+## The recovery loop
 
-```bash
-pnpm install
-pnpm exec agent-native dev
+```text
+Synthetic failure → baseline trace → agent inspects evidence → structured patch
+        → deterministic verification → human approval → simulated apply + audit
 ```
 
-Open the local URL printed by the server and sign in. Local development uses PGlite. Open `/studio`; chat remains at `/chat`. A configured, tool-capable model provider is required for a live agent investigation; select it in the shared model settings. Do not put provider credentials in the repository or demo materials.
+| Scenario | Failure represented | Recovery modeled |
+| --- | --- | --- |
+| Payment timeout | Capture accepted but the response times out; an unsafe retry can duplicate it. | Retry with an idempotency key. |
+| Inventory shortage | Stock is insufficient and payment is skipped. | Reserve or route unavailable stock to backorder. |
+| Duplicate webhook | Repeated delivery can create two captures. | Suppress the duplicate event or use idempotency. |
 
-See [DEMO.md](DEMO.md) for the 2–3 minute walkthrough, [SUBMISSION.md](SUBMISSION.md) for submission copy, and [ARCHITECTURE.md](ARCHITECTURE.md) for the implementation and safety boundaries.
+Before and after are **simulation results**. For example, the timeout baseline has one synthetic capture with an unconfirmed outcome; the tested idempotent retry succeeds with one capture and zero duplicates. It does not establish the behavior of a real payment processor.
 
-## Checks
+## Agent-Native, with Groq
+
+The Studio and agent share typed Agent-Native actions and SQL-backed case state. The investigation surface exposes `inspect-recovery` and `propose-recovery`; the configured agent is instructed to inspect evidence before proposing a patch. The default engine is `ai-sdk:groq` with `llama-3.3-70b-versatile`. The model may be changed in configuration or settings. The simulator, verification, and approval gates remain deterministic application logic.
+
+Approval is deliberately reserved for a signed-in human in Studio. Apply requires the same approved revision, a passing simulation, and zero duplicate captures. The audit records case events, but is not a tamper-proof ledger. See [security](docs/SECURITY.md) for the trust boundary.
+
+## Evidence and checks
+
+An authenticated read of a historical synthetic case recorded an agent-attributed proposal, a passing simulation, human approval, and simulated application. The user reports Groq generated that proposal, but the individual `inspect-recovery` and `propose-recovery` execution records were not independently accessible. The saved audit does not prove the provider or those calls. [Read the evidence and its limits](docs/EVIDENCE.md).
 
 ```bash
 pnpm test
 pnpm typecheck
 pnpm agent-native:doctor
-pnpm build
+npm run build:vercel
 ```
 
-A hosted production runtime requires persistent Postgres and production authentication configuration. A successful build is not a deployment or a production-readiness check. Licensed under the MIT license; see [LICENSE](LICENSE).
+The 9 November 2026 local run passed 10 tests in two files: five deterministic simulation tests and five approval/apply boundary tests using a mocked database. Typecheck and doctor passed. These are not hosted end-to-end or security-audit results. See [evidence](docs/EVIDENCE.md) for the current build and deployment status.
+
+## Repository and deployment
+
+| Path | Purpose |
+| --- | --- |
+| [app/routes/studio.tsx](app/routes/studio.tsx) | Recovery Studio interface |
+| [actions/](actions/) | Real case actions and human approval boundary |
+| [server/lib/recovery.ts](server/lib/recovery.ts) | Deterministic synthetic simulator |
+| [server/db/](server/db/) | SQL case schema and database access |
+| [docs/](docs/) | Judge guide, architecture, security and evidence |
+| [JUDGE-DEPLOYMENT.md](JUDGE-DEPLOYMENT.md) | Production configuration and remaining release checks |
+
+Local development uses PGlite; production needs hosted PostgreSQL, authentication, a Groq credential and restricted judge access. A successful build is not proof that the hosted app works. The app is licensed under the [MIT license](LICENSE).
