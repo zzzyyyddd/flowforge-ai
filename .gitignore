@@ -41,3 +41,17 @@ learnings.md
 .vercel/
 .agent-native/
 data/*.lock
+
+# Local package manager caches
+.corepack-cache/
+.pnpm-store/
+
+# Local secrets and databases
+.env
+.env.*
+!.env.example
+*.sqlite
+*.sqlite3
+*.db
+*.db-wal
+*.db-shm

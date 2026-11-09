@@ -1,33 +1,37 @@
-# Chat
+# FlowForge AI
 
-The minimal agent-native starter app — a clean, ChatGPT-style shell with chat at
-the center, durable threads, standard app navigation, auth, live sync, and
-actions. Start here when you want a real browser app to build on without
-committing to a domain template.
+FlowForge AI is an Agent-Native recovery studio for synthetic Order-to-Payment failures. It helps an operator investigate a failed workflow, review a structured patch, simulate its effects and approve the exact revision before applying it to the simulated case. It never contacts a real payment gateway, inventory service or webhook provider.
 
-**Live app: [chat.agent-native.com](https://chat.agent-native.com?utm_source=github&utm_medium=referral&utm_content=chat-readme)**
+## Why agent-native
 
-Chat is the basic agent-native app starting point. It gives you the app-agent
-loop wired end to end and one example action, so you can add your own UI, data,
-and actions on top.
+The agent works through the same typed recovery actions that power the Studio: it can inspect case evidence and propose a structured change in the context of the selected case. The shared AgentSidebar keeps the investigation in the operator's workflow. Case state, simulation results and audit events persist in SQL. A human reviews and approves a passing revision in Studio; the agent cannot approve it. Application checks that exact approval and zero duplicate synthetic captures.
 
-## Features
+## Demonstrated recovery
 
-- ChatGPT-style shell with a threads list and durable chat history.
-- Auth, live sync, and application state wired out of the box.
-- The action surface the agent and UI share, plus one example action to copy.
-- A minimal, brandable base for any domain app.
+For payment-timeout case `9cf20a1d-e774-450b-805e-6461fa89612c`, an authenticated case read confirmed an agent-attributed revision 2, a passing recovery simulation with one synthetic capture and zero duplicate captures, human approval, and application of that revision. The saved patch uses two retries, a 5,000 ms timeout and idempotency. The user reports the proposal was generated with Groq; the individual `inspect-recovery` and `propose-recovery` execution records were not independently accessible and remain **unverified**. See [AGENT-VERIFICATION.md](AGENT-VERIFICATION.md).
 
-## Develop locally
+The original failure and the recovered outcome appear as separate traces. The simulator also models inventory shortage and duplicate webhook delivery. Its traces and results are synthetic; they are not proof about real-world systems.
 
-Scaffold your own copy and run it:
+## Run locally
+
+Requires Node.js 22.22 or newer and the dependencies in `pnpm-lock.yaml`.
 
 ```bash
-npx --yes @agent-native/core@latest create my-app --standalone --template chat
-cd my-app
-corepack enable
 pnpm install
-pnpm dev
+pnpm exec agent-native dev
 ```
 
-Full docs: [agent-native.com/docs/template-chat](https://agent-native.com/docs/template-chat?utm_source=github&utm_medium=referral&utm_content=chat-readme).
+Open the local URL printed by the server and sign in. Local development uses PGlite. Open `/studio`; chat remains at `/chat`. A configured, tool-capable model provider is required for a live agent investigation; select it in the shared model settings. Do not put provider credentials in the repository or demo materials.
+
+See [DEMO.md](DEMO.md) for the 2–3 minute walkthrough, [SUBMISSION.md](SUBMISSION.md) for submission copy, and [ARCHITECTURE.md](ARCHITECTURE.md) for the implementation and safety boundaries.
+
+## Checks
+
+```bash
+pnpm test
+pnpm typecheck
+pnpm agent-native:doctor
+pnpm build
+```
+
+A hosted production runtime requires persistent Postgres and production authentication configuration. A successful build is not a deployment or a production-readiness check. Licensed under the MIT license; see [LICENSE](LICENSE).

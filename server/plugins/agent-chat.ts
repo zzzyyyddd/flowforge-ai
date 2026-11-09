@@ -11,11 +11,8 @@ import {
 } from "../lib/composer-references.js";
 
 const INITIAL_TOOL_NAMES = [
-  "view-screen",
-  "navigate",
-  "hello",
-  "provider-api-request",
-  "ask-question",
+  "inspect-recovery",
+  "propose-recovery",
 ];
 
 export default createAgentChatPlugin({
@@ -31,11 +28,16 @@ export default createAgentChatPlugin({
   },
   actions: loadActionsFromStaticRegistry(actionsRegistry),
   mcp: { connectorCatalog: [], appApprovalPage: true },
+  leanPrompt: true,
+  frameworkTools: "minimal",
+  corpusTools: "lazy",
   initialToolNames: INITIAL_TOOL_NAMES,
+  // The scope also prevents development mode from adding its coding tools to
+  // this request. Studio's HTTP actions remain available to the signed-in UI.
+  resolveActionSurface: () => ({
+    allowedActionNames: INITIAL_TOOL_NAMES,
+    actionScope: { workflow: "recovery-investigation" },
+  }),
   resolveOrgId: async (event) => (await getOrgContext(event)).orgId,
-  systemPrompt: `You are the Chat app agent.
-
-This is a minimal chat-first Agent-Native app. The chat is the product surface, and actions are the contract shared by chat, UI, HTTP, MCP, A2A, and CLI.
-
-Use actions as the source of truth. Start by inspecting the current screen when context matters. When the user asks to extend this app, keep the change small and agent-native: add or update actions, expose useful UI, and keep application state/navigation visible to the agent.`,
+  systemPrompt: `Investigate synthetic recovery cases. Call inspect-recovery with the case ID before diagnosing, then call propose-recovery with an evidence-based patch that preserves idempotency. Report tool failures honestly. Never approve or apply a patch; a human must review and approve a passing simulation in Studio.`,
 });

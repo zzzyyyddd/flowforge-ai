@@ -16,6 +16,7 @@ import { AgentNativeIcon } from "@agent-native/toolkit/app/shared/AgentNativeIco
 import {
   IconEdit,
   IconHome,
+  IconGitBranch,
   IconLayoutSidebarLeftCollapse,
   IconLayoutSidebarLeftExpand,
   IconLoader2,
@@ -310,6 +311,7 @@ export function Sidebar({
   onCollapsedChange,
 }: SidebarProps) {
   const t = useT();
+  const location = useLocation();
   const ToggleIcon = collapsed
     ? IconLayoutSidebarLeftExpand
     : IconLayoutSidebarLeftCollapse;
@@ -407,7 +409,24 @@ export function Sidebar({
           collapsed ? "items-center gap-1 px-1 py-2" : "pt-1",
         )}
       >
-        <HomeNavLink collapsed={collapsed} />
+        <div className={collapsed ? undefined : "px-2 pb-1"}>
+          <Link
+            to="/studio"
+            aria-label={collapsed ? "Recovery studio" : undefined}
+            className={cn(
+              "flex items-center text-sidebar-accent-foreground transition-colors hover:bg-sidebar-accent",
+              location.pathname === "/studio" && "bg-sidebar-accent",
+              collapsed
+                ? "size-8 justify-center rounded-md"
+                : "h-8 w-full gap-3 rounded-lg px-3 text-sm font-medium",
+            )}
+          >
+            <IconGitBranch className="size-4 shrink-0" strokeWidth={1.8} />
+            <span className={collapsed ? "sr-only" : "truncate"}>
+              Recovery studio
+            </span>
+          </Link>
+        </div>
         <ChatThreadsSection collapsed={collapsed} />
       </nav>
 

@@ -18,13 +18,19 @@ export interface NavigationState {
   path?: string;
   publicPath?: string;
   threadId?: string;
+  caseId?: string;
 }
 
 export function useNavigationState() {
   useAgentRouteState<NavigationState>({
     browserTabId: TAB_ID,
     requestSource: TAB_ID,
-    getNavigationState: ({ pathname }) => navigationStateForPath(pathname),
+    getNavigationState: ({ pathname, searchParams }) => ({
+      ...navigationStateForPath(pathname),
+      ...(pathname === "/studio" && searchParams.get("case")
+        ? { caseId: searchParams.get("case")! }
+        : {}),
+    }),
     getCommandPath: commandPathForNavigation,
   });
 }
@@ -73,6 +79,7 @@ export function navigationStateForPath(pathname: string): NavigationState {
 }
 
 function viewForPath(pathname: string): string {
+  if (pathname === "/studio") return "studio";
   if (isChatPathname(pathname)) return "chat";
   if (pathname === HOME_PATH) return "home";
   if (pathname.startsWith("/database")) return "database";
@@ -91,6 +98,8 @@ function pathForView(view?: string): string {
     case "chat":
     case "ask":
       return NEW_CHAT_PATH;
+    case "studio":
+      return "/studio";
     case "home":
       return HOME_PATH;
     case "database":

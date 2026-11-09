@@ -1,5 +1,5 @@
 const rawAppName = "flowforge-app";
-const rawAppTitle = "Flowforge App";
+const rawAppTitle = "FlowForge AI";
 
 const APP_NAME_PLACEHOLDER = "{" + "{APP_NAME}}";
 const APP_TITLE_PLACEHOLDER = "{" + "{APP_TITLE}}";

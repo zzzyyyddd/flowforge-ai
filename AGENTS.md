@@ -31,3 +31,15 @@ Use `adding-a-feature` for functional parity and `frontend-design` for a user-fa
 Before building common workspace or agent UI, read `agent-native-toolkit`; for supported customization, read `customizing-agent-native`.
 
 - Guarded verification: run `pnpm agent-native:doctor`; fix findings before done.
+
+## FlowForge recovery studio
+
+`/studio` runs synthetic Order-to-Payment recovery cases; no real payments or external workflow services are used. `navigation.caseId` identifies the selected case. Inspect evidence before diagnosing. A patch change invalidates verification and approval. Only a human in the studio may approve a verified revision; never approve on their behalf. Apply requires that exact approval and a passing simulation with zero duplicate captures. Report rejected actions and distinguish simulation evidence from real-world evidence.
+
+| Action | Purpose |
+| --- | --- |
+| create-recovery | Create a synthetic case |
+| list-recoveries | List recent cases |
+| inspect-recovery | Read case evidence, patch and audit |
+| propose-recovery | Save a structured patch |
+| run-recovery | Run baseline, verify or apply an approved patch |
